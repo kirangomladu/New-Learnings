@@ -1,0 +1,4 @@
+datanodes[1-17]: ^(lo|p3p2|p3p1|em1|em2|em3|em4)$
+manager nodes and webnodes [1-2]: ^(lo|p3p2|em1|em2|em3|em4)$
+datanodes[18-19] : ^(lo|p3p2|p3p1|em2|em3|em4)$
+webnode3: ^(lo|p2p1|em1|em2|em3|em4)$
