@@ -1,0 +1,40 @@
+If a process is consuming too much memory then the kernel "Out of Memory" (OOM) killer will automatically
+ kill the offending process. It sounds like this may have happened to your job.
+ The kernel log should show OOM killer actions, so use the "dmesg" command to see what happened,
+ e.g.
+
+dmesg | less
+ 
+54.125380] Out of memory: Kill process 8320 (stress-ng-brk) score 324 or sacrifice child
+[   54.125382] Killed process 8320 (stress-ng-brk) total-vm:1309660kB, anon-rss:1287796kB, file-rss:76kB
+[   54.522906] gmain invoked oom-killer: gfp_mask=0x24201ca, order=0, oom_score_adj=0
+[   54.522908] gmain cpuset=accounts-daemon.service mems_allowed=0
+[   54.522912] CPU: 6 PID: 1032 Comm: gmain Not tainted 4.4.0-0-generic #3-Ubuntu
+[   54.522913] Hardware name: Intel Corporation Skylake Client platform/Skylake DT DDR4 RVP8, BIOS SKLSE2R1.R00.B089.B00.1506160228 06/16/2015
+[   54.522914]  0000000000000000 000000002d879fe9 ffff88016d727a58 ffffffff813d8604
+[   54.522915]  ffff88016d727c50 ffff88016d727ac8 ffffffff8120272e 0000000000000015
+[   54.522916]  0000000000000000 ffff880080ab3600 ffff880086725880 ffff88016d727ab8
+
+If the user or sysadmin did not kill the program the kernel may have.
+ The kernel would only kill a process under exceptional circumstances such as extreme resource starvation (think mem+swap exhaustion).
+
+dmesg -T| grep -E -i -B100 'killed process'                                ( Note dmesg -T - shows logs with time label)
+Where -B100 signifies the number of lines before the kill happened.
+
+Omit -T on Mac OS.
+
+
+
+This is the Linux out of memory manager (OOM).              sudo journalctl -xb
+You'll see a message like:
+
+Jul 20 11:05:00 someapp kernel: Mem-Info:
+Jul 20 11:05:00 someapp kernel: Node 0 DMA per-cpu:
+Jul 20 11:05:00 someapp kernel: CPU    0: hi:    0, btch:   1 usd:   0
+Jul 20 11:05:00 someapp kernel: Node 0 DMA32 per-cpu:
+Jul 20 11:05:00 someapp kernel: CPU    0: hi:  186, btch:  31 usd:  30
+Jul 20 11:05:00 someapp kernel: active_anon:206043 inactive_anon:6347 isolated_anon:0
+                                    active_file:722 inactive_file:4126 isolated_file:0
+                                    unevictable:0 dirty:5 writeback:0 unstable:0
+
+Finding which process was killed by Linux OOM killer  Try this out:    grep -i 'killed process' /var/log/messages
