@@ -1,0 +1,20 @@
+hdfs lsSnapshottableDir
+
+drwx--x--x 0 hbase            hbase            0 2021-03-29 16:43   0 65536 /hbase
+drwxr-xr-x 0 ir-hadoop        supergroup       0 2021-06-09 13:42   3 65536 /idw/prod
+
+
+# hdfs dfs -du -h /tmp/ | grep T
+
+1.3 T    4.0 T    /tmp/irdw
+8.4 T    25.3 T   /tmp/irfraud
+391.8 G  1.1 T    /tmp/logs
+
+# hdfs dfs -du -h /tmp/ | grep G
+
+405.8 M  1.2 G    /tmp/cam_mp_ad_mpview
+
+# hdfs dfs -du -h /
+
+0        0        /cloudera-nn1.stage.atl.impactradius.net
+19.8 T   59.6 T   /hbase
