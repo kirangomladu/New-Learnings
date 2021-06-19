@@ -1,0 +1,10 @@
+MOP For Rack Changes
+
+  1.Click Hosts > All Hosts.
+  2.Select the hosts that you want to assign to a rack.
+  3.Click Actions for Selected > Assign Rack.
+  4.Enter a rack name or ID that starts with a slash /, such as /rack123 or /aisle1/rack123.
+  5.Click Confirm.
+  6.Restart the affected Services. Rack assignments are not automatically updated for running services.
+
+Please Review it.
