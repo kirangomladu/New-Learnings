@@ -1,0 +1,51 @@
+sudo yum install httpd
+
+sudo yum install wget
+
+sudo mkdir -p /var/www/html/cdh15.2
+
+sudo wget --recursive --no-parent --no-host-directories https://ce6c5cf6-9e78-413c-b668-44cc10352de3:c745353c0883@archive.cloudera.com/p/cdh5/parcels/5.15.2/CDH-5.15.2-1.cdh5.15.2.p0.3-el7.parcel -P /var/www/html/cdh15.2
+
+sudo wget --recursive --no-parent --no-host-directories https://ce6c5cf6-9e78-413c-b668-44cc10352de3:c745353c0883@archive.cloudera.com/p/cdh5/parcels/5.15.2/CDH-5.15.2-1.cdh5.15.2.p0.3-el7.parcel.sha1 -P /var/www/html/cdh15.2
+
+sudo wget --recursive --no-parent --no-host-directories https://ce6c5cf6-9e78-413c-b668-44cc10352de3:c745353c0883@archive.cloudera.com/p/cdh5/parcels/5.15.2/manifest.json -P /var/www/html/cdh15.2
+
+
+systemctl restart httpd.service
+
+
+sudo chmod -R ugo+rX /var/www/html/cdh15.2
+
+sudo chown -R apache:apache -R /var/www/html/cdh15.2
+sudo chmod -R 755 -R /var/www/html/cdh15.2
+
+
+sudo vi /etc/httpd/conf/httpd.conf
+
+systemctl restart httpd.service  (every time when .conf changed)
+Alias /cdh5.15/ "/var/www/html/cdh15.2"
+<Directory "/var/www/html/cdh15.2">
+   Options FollowSymLinks
+   AllowOverride all
+   Order allow,deny
+   Allow from all
+   Require all granted
+</Directory>
+
+ Options +Indexes
+  AllowOverride all
+  Order allow,deny 
+  Allow from all 
+  Require all granted
+  
+  
+  No parcels found from the configured repositories. Try adding a Custom Repository under More Options. Otherwise, you may only proceed with Use Packages.
+  
+  
+ sudo wget --recursive --no-parent --no-host-directories http://ec2-3-16-36-76.us-east-2.compute.amazonaws.com/cdh15.2/ 
+ 
+ sudo service cloudera-scm-server stop
+ 
+ sudo service cloudera-scm-server-db stop
+ 
+ mysql  Ver 14.14 Distrib 5.7.34, for Linux (x86_64) using  EditLine wrapper
