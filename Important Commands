@@ -1,0 +1,222 @@
+/var/log/cloudera-scm-server/cloudera-scm-server.log
+/var/log/cloudera-scm-server/cloudera-scm-server.out
+
+/etc/cloudera-scm-server/db.properties
+
+/var/log/mysqld.log
+ 
+For hdp
+export HADOOP_YARN_HOME=/usr/hdp/current/hadoop-yarn-nodemanager   
+export YARN_LOG_DIR=/grid/0/log/yarn/$USER       
+export YARN_PID_DIR=/var/run/hadoop-yarn/$USER
+
+
+                                 USABLE Commands
+$ hdfs dfs -ls /
+$ hdfs dfs -ls -d /hadoop                       list hadoop files
+$ hdfs dfs -ls -R /hadoop                       Recursively all files and sub folders
+$ hdfs dfs -ls hadoop/dat*                     List file starting with dat*
+
+$ hdfs dfs -put  xyz.csv  /data/             note :- local to hdfs 
+$ hdfs dfs -cat /data/xyz.csv
+$ hdfs dfs -chmod 777
+$ hdfs dfs -chmod -R 777 
+$ hdfs dfs -du -h /data/xyz.csv     see the size of the file
+$ hdfs dfs -mv xyz.csv  /data/
+$ hdfs dfs -rm -r 
+$ stop-all.sh   $ start-all.sh
+$ hadoop version
+$ hdfs fsck/
+$ hdfs dfsadmin safemode leave
+$ hadoop fs [generic option] -touchz
+$ hdfs dfs [generic option] -getmerge
+$ hdfs dfs chown -R admin:hadoop
+                                       
+                                              Yarn
+$ yarn                 -  get help
+$ yarn [-config dir]     -define configuration
+$ yarn [-loglevel]       - error, fatal,warning, info
+$ yarn -classpath        -  Shows hadoop class path
+$ yarn application      -  show and kill hadoop apps
+$ yarn container         - Container info
+$ yarn node                -Shows node information
+$ yarn queue               - queue information
+
+                                             Map-reduce
+$ hadoop  job -submit  <job file>
+$ hadoop  job -status   <job-id>
+$ hadoop  job -counter <jobid> <groupname>     print counter value
+$ hadoop job -kill  <job id>
+$ hadoop job -history
+$ hadoop job -list
+$ hadoop job -set-priority <jobid> <priority>
+                   
+                      Important for Map-Reduce parameter as pass as generic
+
+-input directory/filename      shows input location for mappers
+-output directory-name         shows output location for mappers
+-mapper execuatable
+-reducer execuatable
+-numReduceTasks
+-mapdebug
+-reducedebug
+
+$ hdfs dfs -stat %r /path           Command to find specific number of  replication
+$ pip install pyspark                  To install pyspark
+$ find / -name hive-exec-*.jar    Find file nae start from hive-exec-
+$ find / -type f -size -256M      get the list of directories 
+                                                   which has files less than 256 mb
+$ find / -name zkCli.sh kr   
+$ find / -name hadoop-httpfs kro
+$ du -sh /app/* | sort | grep G
+$ sudo service hadoop-yarn-resourcemanager status    Or
+$ sudo status hadoop-                 yarn-resourcemanagerHow to checķ service of yarn
+            if Command not found error comes then
+         /usr/hdp/current se aur dusra ek way hai yarn rmadmin -getAllServiceState se
+
+$ tar -czvf database_backup.sql.tar.gz database_backup.sql
+         You are copying .sql file there is a chances of file corruption so compressed the
+         file first using below command then copy ( note you are comprssing .sql file )
+$ mysqldump --all-databases -u root -p > all-databases.sql
+$ sudo mysql -u root -p < all-databases.sql    
+                                         For loading the database use below command.
+
+
+
+
+
+$To check the container :-  1. RM web UI, 2. Job history web UI,
+                                           3. by cmd:-  application_appid_containerid,
+                                           4. by  click on app id ,it will show all containers
+                                                used by job,  ALSO 
+                                       jhs web ui -> app id -> AM host logs -> syslog
+                                       in syslog search "container" key word
+       or
+         yarn logs -applicationId <Application ID> -show_application_log_info
+              You will get a list all containers with node on which they are running
+
+Q. Services is running but we ui not able to acess (ex. rm)
+Ans :- Check port  (8080)   or Run jps get pid and run this command to get port no.
+          Netstat -nltp | grep pid
+
+
+
+
+Issue :- facing SSLHandshakeException after firing yarn logs command
+          1.  Check certificate validity first
+          2.  You can easily understand it from url, if it is not secure will directly can
+                see.
+          3.  You need to request for server certificate and add that into java cacerts
+
+Issue Connection Refuse :- Generally comes at deployment so link 
+https://www.guru99.com/hive-metastore-configuration-mysql.html
+
+Hbase deployment for single node
+https://www.bogotobogo.com/Hadoop/BigData_hadoop_HBase_Pseudo_Distributed.php
+
+I have installed spark on HDP and trying to start spark-shell but didn't stated saying sparkUI cloud not bind with 4040
+   1.  Port might be occupied   Netstat -tulpn | grep portnumber   lsof -i: port
+                                               Ps -eaf | grep portnumber
+Imapala Issue :-  Memory Limit:- failed to get memory reservation
+-  SET MEM_LIMIT=50g;  for memory limit for querry
+
+How to know which app/process is running with the pid 132363
+Ps -ef | grep    RM Ui check kiye kya 
+
+Impala Error:-  however team is not able to connect over jdbc /  Odbc connection thru  port 21050 .  They are getting timeout.
+Run :-  netstat -tulpn | grep 21050    try to ping  check responses
+     Check Security groups 
+Hive Error :- Connection time out hive server down and restarted
+  Update some properties in hive site.xml
+
+Hbase ERROR: KeeperErrorCode = ConnectionLoss for /hbase-unsecure/master
+Ans :- Check port no then yarn logs if not then zookeeper logs
+          Check are you able to connect to zookeeper from that node
+
+Cloudera agent version mismatch issue.
+
+Solution :- Below are the steps how to install the same version agent.
+
+1.stop agent 
+2.take backup repo file
+ 3. Nullify the original repo file. 
+4. Created same repo file 5.Do yum clean all 
+6. Do yum repolist | grep -i cloudera 
+7.yum update cloudera-manager-* 
+8. rpm -qa | grep -i cloudera
+9. Start agent back 10.restart CMS.
+
+ java.util.concurrent.ExecutionException: org.apache.kafka.common.errors.TimeoutException: Failed to update metadata after 102 ms.
+--------------------- --------------------------------------------------------------------------
+
+
+Checking space taken by directory          $ hdfs dfs -du -s -h /path
+                                                             or
+                                                             $ hdfs dfs -count  -q /path
+
+$ ps -ef | grep 'ip' 
+
+current disk utilization as below:              ~]$ df -hT
+
+
+
+
+
+
+
+
+$ kadmin.local  <-|   (will ask password admin password)
+$ listprincs
+Create Principal :-
+$ addprinc pavan.gomladu@CLAIRVOYANT.COM              Enter Password:- and Re-enter
+
+$ listprincs        (list created principal)
+
+$ xst -norandkey -k /path/to/pavan_gomladu.keytab   pavan.gomladu@CLAIRVOYANT.COM   (keytab will be created in /path/to/by name you gave)
+
+$ quit
+$ ls /path/to/     (will show created Keytab file)
+
+$ klist -kte pavan_gomladu.keytab                (will show it's encryption with principal name for it created)
+$ kdestroy
+
+$ kinit -kt   pavan_gomladu.keytab  pavan.gomladu@CLAIRVOYANT.COM       (Here you are Initializing the key to access)
+$ klist                                                                 (by klist you can check your ticket is initilized to access)
+
+$ kinit -p pavan.gomladu      or   $ kinit pavan.gomladu@CLAIRVOYANT.COM                (will ask password this time, 
+                                                                          Use the password which is you are created for principal creation for the user)	
+----------------- --------------------------------------------------------------------------------------------------------------------------------------
+                                      OR
+Using KTUTIL NOW
+$ ktutil   <-|
+$ add_entry -password -p pavan.gomladu@CLAIRVOYANT.COM -k 1 -e aes256-cts     (-p for ask password, -k for key version, -e encryption)
+                                                                                 (you can add multiple encryption for same principal)
+                                                                                 (will ask password for created principal)
+$ wkt path/to/pavan_gomladu.keytab          (it generate keytab file on path)
+$ wkt path/to/raghv_xys.keytab              (you can add more keytab in same keytab)
+$ quit
+
+$ ls /path/to                                                     (list created principal)
+$ klist -kte pavan_gomladu.keytab                                 (will show principal and encryption)
+$ kinit -kt pavan_gomladu.keytab   pavan.gomladu@CLAIRVOYANT.COM   (here you are initilizing it)
+$ klist                                                            (list initilizing details)
+
+$ kdestroy
+$ kinit -p pavan.gomladu       or  $ kinit pavan.gomladu@CLAIRVOYANT.COM     (WILL Ask password)
+$ klist
+
+Imp Note :- Please give proper permission to keytab file, so anyone can use this keytab and access the cluster
+-------------------------------------------------------------------------------------------
+                                     OR
+Use this for services generally
+
+$ kadmin.local 
+$ ktadd -k pavan_gomladu.keytab pavan.gomladu@CLAIRVOYANT.COM    (generate with all the encryptions)
+$ ls /path/to
+$ klist -kt pavan_gomladu.keytab    (note not initilize here will show the principal and encryption)
+$ kdestroy
+$ kinit -kt pavavan_gomladu.keytab pavan.gomladu@CLAIRVOYANT.COM    (Here initilized the ticket)
+$ klist 
+$ kdestroy
+
+------------- ------------------------------ ---------------------------------------------------
