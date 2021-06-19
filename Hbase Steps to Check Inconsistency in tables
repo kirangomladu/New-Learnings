@@ -1,0 +1,37 @@
+Step 1.  Authenticate if you're on a secured cluster. You are on a secured cluster, aren't you? ;)
+          kinit [keytab] [principal]
+
+Step 2. Run HBase check to see which regions specifically are unassigned
+
+        hbase hbck -details
+    
+Step 3.	If you see an error like this:
+             ERROR: Region { 
+                   meta => my.tablename,,1500001112222.abcdef123456789abcdef12345678912., 
+                   hdfs => hdfs://cluster/apps/hbase/data/data/default/my.tablename/abcdef123456789abcdef12345678912,
+             deployed => ,
+             replicaId => 0 
+                     } not deployed on any region server.
+
+        (the key being "not deployed on any region server"), 
+		    then you should assign the region. This, it turns out, is pretty simple. Proceed to step 4.
+
+Step 4.   Open an hbase shell
+           hbase shell
+					 
+Step 5.  Assign the region by passing the encoded regionname to the assign method. 
+		   As noted in the help documentation, this should not be called without the previous due diligence 
+		   as this command will do a force reassign. The docs say, and I caution: for experts only.
+
+        hbase(main):001:0> assign 'abcdef123456789abcdef12345678912'
+
+Step 6. Double-check your work by running hbase check for your table that had the unassigned regions.
+      
+	      hbase hbck my.tablename
+		  
+         If you did everything correctly and if there's no underlying HDFS issue, 
+		 you should see this message near the bottom of the hbck output:
+
+         0 inconsistencies detected.
+         Status: OK
+		 
