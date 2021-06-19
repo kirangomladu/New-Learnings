@@ -1,0 +1,72 @@
+We have this HBase cluster: 30+ nodes, 48 tables, 40+TB on HDFS level, replication factor 2. Due to disk failure on two nodes, we have a corrupt file on HDFS.
+
+Current HDFS status
+Excerpt of hdfs fsck / output, which shows a corrupt HBase region file:
+
+   Excerpt of hdfs fsck / output, which shows a corrupt HBase region file:
+
+                    /user/hbase/table_foo_bar/295cff9c67379c1204a6ddd15808af0b/n/ae0fdf7d0fa24ad1914ca934d3493e56: 
+                     CORRUPT blockpool BP-323062689-192.168.12.45-1357244568924 block blk_9209554458788732793
+                    /user/hbase/table_foo_bar/295cff9c67379c1204a6ddd15808af0b/n/ae0fdf7d0fa24ad1914ca934d3493e56:
+                     MISSING 1 blocks of total size 134217728 B
+
+                      CORRUPT FILES:        1
+                      MISSING BLOCKS:       1
+                      MISSING SIZE:         134217728 B
+                      CORRUPT BLOCKS:       1
+
+                 The filesystem under path '/' is CORRUPT
+                 
+                 
+Current HBase status
+According to HBase on the other hand, everything is fine and dandy
+
+     hbase hbck says:
+
+             Version: 0.94.6-cdh4.4.0
+               ...
+             table_foo_bar is okay.
+             Number of regions: 1425
+             Deployed on:  ....
+               ...
+             0 inconsistencies detected.
+            Status: OK   
+Moreover, it seems that we can still query data from the non-lost blocks of the corrupt region file (as far as I think I was able to check based on the start and end row key of the region).
+
+Next steps
+Because the file block data is not recoverable, it seems the only option is to remove the complete corrupt file (with hadoop fs -rm or hadoop fsck -delete /). This will "fix" corruption at the HDFS level.
+However, I'm afraid removing the HDFS file will introduce corruption at the HBase level as a complete region file will be gone
+I considered hadoop fsck -move / to move the corrupt file to /lost+found and see how HBase would take that, but moving to /lost+found is not as reversible as it seems, so I'm hesitant about that as well
+Concrete questions:
+Should I just remove the file? (Losing the data corresponding to that region is reasonably fine for us.) What bad things happen when you manually remove a HBase region file in HDFS? Does it just remove the data or would it introduce ugly metadata corruption in HBase that also have to be taken care of?
+
+Or can we actually leave the situation as-is, which seems to work at the moment (HBase is not complaining about/seeing corruption)?
+
+
+Answers
+
+We had a similar situations: 5 missing blocks, 5 corrupted files for an HBase table.
+   HBase version: 0.94.15
+   distro: CDH 4.7
+   OS: CentOS 6.4
+
+Recovery instructions:
+
+switch to hbase user: su hbase
+hbase hbck -details to understand the scope of the problem
+hbase hbck -fix to try to recover from region-level inconsistencies
+hbase hbck -repair tried to auto-repair, but actually increased number of inconsistencies by 1
+hbase hbck -fixMeta -fixAssignments
+hbase hbck -repair this time tables got repaired
+hbase hbck -details to confirm the fix
+At this point, HBase was healthy, added additional region, and de-referenced corrupted files. However, HDFS still had 5 corrupted files. Since they were no longer referenced by HBase, we deleted them:
+
+switch to hdfs user: su hdfs
+hdfs fsck / to understand the scope of the problem
+hdfs fsck / -delete remove corrupted files only
+hdfs fsck / to confirm healthy status
+NOTE: it is important to fully stop the stack to reset caches
+(stop all services thrift, hbase, zoo keeper, hdfs and start them again in a reverse order).
+
+[1] Cloudera page for hbck command:
+http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/admin_hbck_poller.html
