@@ -1,0 +1,80 @@
+Disable alerting via IRC (as found here):
+2. Run the following command to identify any problems in the HDFS file system :
+    Fix any errors reported by the fsck command.
+     hdfs fsck / -list-corruptfileblocks -openforwrite -files -blocks -locations 2>&1 > /tmp/hdfs-fsck.txt
+3. Host Decommission (While decommissioning, keep the track of Rack. So once you add the new host, need to change the rack from default)
+     For each node, Log on to Cloudera Manager
+     Clusters → Prod2 → Hosts
+     Select the host to decommission → Actions for selected
+           Begin Maintenance (Suppress Alerts/Decommission). 
+           Choose Decommission Host(s) and Decommission DataNodes.
+4. Remove from Cloudera Manager the decommissioned hosts.
+      After host decom we need to refresh stale configuration and run rolling restart for affected services.
+    	  ** Reference: https://jira.atlas.llnw.com/browse/SYSDBA-20984
+5. Data center HW Replacement
+       Notify Client Data Center team the machine can be removed and replaced with new machines.
+6. Hostname Setup
+       Client will complete the machine setup before we add back to production. 
+	   Once done, we should run evaluation on the new nodes. Also copy certificates to path /opt/cloudera/security/
+       a. Copy and untar certs from Jump host (db-gw-1) /home/aalgude/security.tar to new hosts on location   /opt/cloudera/security/
+       Login to Jump host
+        scp /home/aalgude/security.tar NEW_HOST:/tmp/
+        Then Login to new host and run
+             sudo tar -xvf /tmp/security.tar -C /opt/cloudera/security
+       b. Update the location of the cert on /usr/local/share/ca-certificates/ by running below command 
+  _DIR=/opt/cloudera
+     c_rehash "${_DIR}/security/CAcerts/"
+     cd "${_DIR}/security/CAcerts/" || exit
+  for SRC in *.pem; do
+       # shellcheck disable=SC2001
+         DST=$(echo "$SRC" | sed 's|pem$|crt|')
+         cp -p "${_DIR}/security/CAcerts/${SRC}" "/usr/local/share/ca-certificates/${DST}"
+     done
+        update-ca-certificates
+7.  Add Host to Cloudera Manager
+         Once all prechecks are completed, need to add host to the cluster.
+         NOTE: Do the installation of CM manually by following below steps.
+         Copy repository into /etc/apt/sources.list.d/cloudera_manager.list
+         root@h:/etc/apt/sources.list.d# cat cloudera_manager.list
+        deb [arch=amd64] http://archive.cloudera.com/cm6/6.3.1/ubuntu1604/apt xenial-cm6.3.1 contrib
+        root@hdp:/etc/apt/sources.list.d#
+     Install the agent
+     sudo apt-get install cloudera-manager-daemons cloudera-manager-agent
+      If you get below error : 
+     E: Unable to locate package cloudera-manager-daemons
+      E: Unable to locate package cloudera-manager-agent
+     Do: apt-get update
+     And then Install the agent.
+     Setup CM host in /etc/cloudera-scm-agent/config.ini
+     server_host=hdp-prd-mgr-cms.llnw.com
+Start Cloudera Agent
+sudo service cloudera-scm-agent start
+sudo service cloudera-scm-agent status
+If the health of the server is bad like this 
+Login to CM and change the rack setting for the host
+Log on to Cloudera Manager → Hosts → HOSTNAME
+  8. Add host part of PROD-2 cluster
+In Select Host Template, select the “New host recommission” 
+ template and make sure to untick the option 
+”start newly created roles after applying the host template” or make sure that the option 
+”start newly created roles after applying the host template” is not selected. 
+
+9. Verify the role groups for the Datanode, Impala Daemon and Nodemanager by following steps below:
+   Go to Prod-2 cluster→  Click on service(Hdfs, Yarn, Impala) → 
+   go to instance tab → click on Role groups → on left side column Click on the role 
+   Group for respective service DataNode hdp-11-14x, NodeManager hdp-11-14x, 
+   ImpalaDaemon hdp-11-14x → Validate the host is added in the group for respective service as shown in below snapshot. :
+10. Check the permission and ownership on path /opt/cloudera/security/x509/ with other hosts in the cluster. Make necessary changes. 
+   chown hue:hue /opt/cloudera/security/x509/hue*
+   chown impala:impala /opt/cloudera/security/x509/impala*
+ 11. Do rolling restart of all affected services
+ 12. Host start services and Verification
+Hosts → HOSTNAME → Start Roles on Hosts
+Confirm that node functions correctly. 
+13. Login to hostname and hostname and remove old process logs of flume 
+from path /var/run/cloudera-scm-agent/process. Just leave the last one and clear all others.
+rm -rf 77241-flume-AGENT 77573-flume-AGENT 77572-flume-AGENT 77562-flume-AGENT 77560-flume-AGENT 77549-flume-AGENT
+14. Enable alerting via IRC (as found here)
+.unsquelch host
+6. HDFS Balancer
+Start the balancer removing the new added host from source in HDFS --> Configurations --> Balancer --> Sources
