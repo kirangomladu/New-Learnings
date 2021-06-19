@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Jupyter idle application kill duration (in Hours)
+kill_duration=10
+
+# Kinit with yarn keytab
+kinit -kt /home/nramasubramanian@corp.xyz.com/yarn.keytab yarn/hostname.com@HADOOP.COM
+
+# Get all Jupyterhub running applications IDs
+yarn application -list 2>/dev/null | grep "jupyterhub" | grep "RUNNING" | awk '{print $1}' > job_list.txt
+
+
+for jobId in `cat job_list.txt`
+do
+        finish_time=`yarn application -status $jobId 2>/dev/null | grep "Finish-Time" | awk '{print $NF}'`
+
+        if [ $finish_time -ne 0 ]; then
+                echo "App $jobId is not running"
+                exit 1
+        fi
+
+        # Get the last time (in USC) from when there were no activity
+        last_jupyter_notification_time_utc=`yarn logs --applicationId $jobId 2>/dev/null | grep "Notifying Hub of activity" | tail -1 | awk '{print $NF}'`
+        last_jupyter_notification_utc_sec=`date --utc -d "$last_jupyter_notification_time_utc" '+%s'`
+
+        current_utc_time_sec=`date --utc '+%s'`
+
+        # Difference of current and last active session
+        time_diff=`expr  $current_utc_time_sec - $last_jupyter_notification_utc_sec`
+
+        time_diff_in_hrs=`expr $time_diff / 3600`
+
+        echo "App $jobId is running for $time_diff_in_hrs hour(s)"
+
+        if [ $time_diff_in_hrs -gt $kill_duration ]; then
+                echo "Killing app $jobId"
+                yarn application -kill $jobId
+        else
+                echo "App $jobId should continue to run"
+        fi
+done
+
+kdestroy
